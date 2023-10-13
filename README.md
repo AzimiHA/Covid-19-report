@@ -1,5 +1,5 @@
 # Covid 19 Global Report
-As an exercise to improve upon my previously non-existant SQL skills, a friend and I collaborated on creating this report. 
+As an exercise to improve upon my  SQL skills, a friend and I collaborated on creating this report. 
 The while the primary objective was to get more familiar with PostgreSQL, we were also curious about the data itself, and set out to answer three key questions:
 1. How did people who were fully or partially vaccinated respond to COVID-19
 compared to those who were unvaccinated?
