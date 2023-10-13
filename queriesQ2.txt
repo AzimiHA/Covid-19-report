@@ -1,0 +1,106 @@
+DROP VIEW IF EXISTS NewTestsDiff CASCADE;
+DROP VIEW IF EXISTS TestsCountries CASCADE;
+
+create view NewTestsDiff as
+select country, (max(newtests) - min(newtests)) / cast(avg(population) as float) as diff
+from TestsAndPositivity natural join countries
+group by country
+having sum(testspercase) > 0;
+
+select country, diff
+from NewTestsDiff
+where diff = (select max(diff) from NewTestsDiff);
+
+DROP VIEW IF EXISTS Austria CASCADE;
+DROP VIEW IF EXISTS DetailedAustria CASCADE;
+
+create view Austria as
+select country, date, newtests, newcases
+from TestsAndPositivity natural join CasesAndDeaths
+where country = 'Austria' and newtests > 0;
+
+create view DetailedAustria as
+select country, date, newtests, newcases,
+    case when newtests < (select avg(newtests) from Austria) / 2 then 'low'
+    when newtests < 1.5 * (select avg(newtests) from Austria) then 'medium'
+    else 'high' end as testLevel
+from Austria;
+
+--Convert resulting table from query to csv file
+\copy (SELECT * FROM DetailedAustria) to 'Austria.csv' csv header;
+
+DROP VIEW IF EXISTS IndexDiff CASCADE;
+DROP VIEW IF EXISTS IndexCountries CASCADE;
+DROP VIEW IF EXISTS TotalTestsByPop CASCADE;
+DROP VIEW IF EXISTS MinTotalTests CASCADE;
+DROP VIEW IF EXISTS MaxTotalTests CASCADE;
+
+create view IndexDiff as
+select country, max(stringencyindex) - min(stringencyindex) as diff
+from TestsAndPositivity
+group by country
+having sum(testspercase) > 0;
+
+create view MaxIndexDiffCountries as
+select country, diff
+from IndexDiff
+where diff = (select max(diff) from IndexDiff);
+
+create view TotalTestsByPop as
+select country, max(totaltests) / cast(avg(population) as float) as testsByPop
+from TestsAndPositivity natural join countries
+group by country
+having sum(totaltests) > 0;
+
+create view MinTotalTests as
+select country, testsByPop
+from IndexDiff natural join TotalTestsByPop
+where testsByPop = (select min(testsByPop) from TotalTestsByPop);
+
+create view MaxTotalTests as
+select country, testsByPop
+from IndexDiff natural join TotalTestsByPop
+where testsByPop = (select max(testsByPop) from TotalTestsByPop);
+
+select country, testsByPop
+from MinTotalTests
+union
+select country, testsByPop
+from MaxTotalTests;
+
+DROP VIEW IF EXISTS Cyprus CASCADE;
+DROP VIEW IF EXISTS DetailedAustria CASCADE;
+DROP VIEW IF EXISTS Madagascar CASCADE;
+DROP VIEW IF EXISTS DetailedMadagascar CASCADE;
+
+create view Cyprus as
+select country, date, stringencyindex, newtests, newcases
+from TestsAndPositivity natural join CasesAndDeaths
+where country = 'Cyprus' and newtests > 0;
+
+create view DetailedCyprus as
+select country, date, stringencyindex, newcases,
+    case when stringencyindex < 40 then 'low'
+    when stringencyindex < 60 then 'medium'
+    when stringencyindex < 80 then 'high'
+    else 'very high' end as StringencyLevel
+from Cyprus;
+
+create view Madagascar as
+select country, date, stringencyindex, newtests, newcases
+from TestsAndPositivity natural join CasesAndDeaths
+where country = 'Madagascar' and newtests > 0;
+
+create view DetailedMadagascar as
+select country, date, stringencyindex, newcases,
+    case when stringencyindex < 40 then 'low'
+    when stringencyindex < 60 then 'medium'
+    when stringencyindex < 80 then 'high'
+    else 'very high' end as StringencyLevel
+from Madagascar;
+--We did not include the results of Madagascar in the Discussion becacuse
+--there were too many missing observations to make good analysis
+
+--Convert resulting tables from queries to csv file
+\copy (SELECT * FROM DetailedCyprus) to 'Cyprus.csv' csv header;
+\copy (SELECT * FROM DetailedMadagascar) to 'Madagascar.csv' csv header;

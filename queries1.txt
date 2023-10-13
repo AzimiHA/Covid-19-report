@@ -1,0 +1,115 @@
+DROP VIEW IF EXISTS totvaxxed CASCADE;
+CREATE VIEW totvaxxed AS
+select country, max(peoplevaccinated) as totalvax
+from vaccinations
+group by country;
+
+DROP VIEW IF EXISTS totvaxxedclean CASCADE;
+CREATE VIEW totvaxxedclean AS
+select country, totalvax
+from totvaxxed
+where totalvax!=0;
+
+DROP VIEW IF EXISTS percentvaxxed CASCADE;
+CREATE VIEW percentvaxxed AS
+Select countries.country as country, cast(totalvax as decimal)/population as percentage
+from countries, totvaxxedclean
+where countries.country = totvaxxedclean.country
+order by percentage DESC;
+
+--View percentage vaxxed of each country
+select * from percentvaxxed;
+
+DROP VIEW IF EXISTS Icelandnew CASCADE;
+CREATE VIEW Icelandnew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Iceland'
+and casesanddeaths.date > '2021-10-01';
+
+DROP VIEW IF EXISTS PortugalNew CASCADE;
+CREATE VIEW PortugalNew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Portugal'
+and casesanddeaths.date > '2021-10-01';
+
+DROP VIEW IF EXISTS Ukrainenew CASCADE;
+CREATE VIEW Ukrainenew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Ukraine'
+and casesanddeaths.date > '2021-10-01';
+
+
+DROP VIEW IF EXISTS serbianew CASCADE;
+CREATE VIEW serbianew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Serbia'
+and casesanddeaths.date > '2021-10-01';
+
+DROP VIEW IF EXISTS IcelandAvg CASCADE;
+CREATE VIEW IcelandAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest, 
+cast(newDeaths as decimal)/(cast((select population from countries where country='Iceland') as decimal)/1000000 ) as deathspermil
+from icelandnew; 
+
+DROP VIEW IF EXISTS SerbiaAvg CASCADE;
+CREATE VIEW SerbiaAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest,
+cast(newDeaths as decimal)/(cast((select population from countries where country='Serbia') as decimal)/1000000 ) as deathspermil,
+cast(icupatients as decimal)/(cast((select population from countries where country='Serbia') as decimal)/1000000 ) as icupermil,
+cast(hospitalpatients as decimal)/(cast((select population from countries where country='Serbia') as decimal)/1000000 ) as hospermil
+from serbianew; 
+
+DROP VIEW IF EXISTS PortugalAvg CASCADE;
+CREATE VIEW PortugalAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest,
+cast(newDeaths as decimal)/(cast((select population from countries where country='Portugal') as decimal)/1000000 ) as deathspermil,
+cast(icupatients as decimal)/(cast((select population from countries where country='Portugal') as decimal)/1000000 ) as icupermil,
+cast(hospitalpatients as decimal)/(cast((select population from countries where country='Portugal') as decimal)/1000000 ) as hospermil
+from portugalnew;
+ 
+DROP VIEW IF EXISTS UkraineAvg CASCADE;
+CREATE VIEW UkraineAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest,
+cast(newDeaths as decimal)/(cast((select population from countries where country='Ukraine') as decimal)/1000000 ) as deathspermil
+from ukrainenew;
+ 
+SELECT * FROM icelandavg;
+SELECT * FROM portugalavg;
+SELECT * FROM serbiaavg;
+SELECT * FROM ukraineavg;
+
+--We used these lines to save to csv files
+\copy (SELECT * FROM icelandavg) to 'icelandavg.csv' csv header;
+\copy (SELECT * FROM portugalavg) to 'portugalavg.csv' csv header;
+\copy (SELECT * FROM serbiaavg) to 'serbiaavg.csv' csv header;
+\copy (SELECT * FROM ukraineavg) to 'ukraineavg.csv' csv header;
+
+

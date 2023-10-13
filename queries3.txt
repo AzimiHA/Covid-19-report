@@ -1,0 +1,104 @@
+--While working with queries, we noticed that the data had negative values for these countries, so we fix them here
+--So that they plot well
+Update CasesAndDeaths SET newdeaths=213 where country='Chile' and date='2021-10-08';
+Update CasesAndDeaths SET newdeaths=87 where country='Switzerland' and date='2021-02-08';
+
+DROP VIEW IF EXISTS totalmanu CASCADE;
+CREATE VIEW totalmanu AS
+select country, manufacturer, sum(totalvaccinations) as sumtotal
+FROM vaccinemanufacturer
+Group by country,manufacturer
+Order by country, sumtotal DESC;
+
+DROP VIEW IF EXISTS totaldoses CASCADE;
+CREATE VIEW totaldoses AS
+select country, sum(totalvaccinations) as sumtotalall
+FROM vaccinemanufacturer
+Group by country;
+
+DROP VIEW IF EXISTS totalratio CASCADE;
+CREATE VIEW totalratio AS
+select totalmanu.country as country, manufacturer,cast(sumtotal as DECIMAL)/NULLIF(sumtotalall,0) as ratio
+FROM totalmanu,totaldoses
+WHERE totalmanu.country=totaldoses.country;
+
+Drop view if exists answer cascade;
+create view answer as 
+SELECT country, manufacturer, ratio
+FROM   (
+   SELECT country, manufacturer, ratio
+        , row_number() OVER(PARTITION BY country ORDER BY ratio DESC) AS rank
+   FROM   totalratio
+   ) A
+WHERE  rank = 1
+order by ratio DESC;
+
+select * from answer;
+
+DROP VIEW IF EXISTS japannew CASCADE;
+CREATE VIEW japannew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Japan'
+and casesanddeaths.date >= '2021-01-01';
+
+DROP VIEW IF EXISTS JapanAvg CASCADE;
+CREATE VIEW JapanAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest, 
+cast(newDeaths as decimal)/(cast((select population from countries where country='Japan') as decimal)/1000000 ) as deathspermil
+from japannew; 
+
+
+
+DROP VIEW IF EXISTS chilenew CASCADE;
+CREATE VIEW chilenew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Chile'
+and casesanddeaths.date >= '2021-01-01';
+
+DROP VIEW IF EXISTS ChileAvg CASCADE;
+CREATE VIEW ChileAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest, 
+cast(newDeaths as decimal)/(cast((select population from countries where country='Chile') as decimal)/1000000 ) as deathspermil
+from Chilenew;
+
+DROP VIEW IF EXISTS Switzerlandnew CASCADE;
+CREATE VIEW Switzerlandnew AS 
+select CasesAndDeaths.country as country, CasesAndDeaths.date as date,NewCases,newDeaths, newTests, ICUPatients,HospitalPatients
+FROM CasesAndDeaths, TestsAndPositivity, Hospitalization
+Where casesanddeaths.country = testsandpositivity.country
+and casesanddeaths.date = testsandpositivity.date
+and casesanddeaths.country=hospitalization.country
+and casesanddeaths.date=hospitalization.date
+and testsandpositivity.country=hospitalization.country
+and testsandpositivity.date=hospitalization.date
+and casesanddeaths.country = 'Switzerland'
+and casesanddeaths.date >= '2021-01-01';
+
+DROP VIEW IF EXISTS SwitzerlandAvg CASCADE;
+CREATE VIEW SwitzerlandAvg AS
+select country, date, cast(newcases as decimal)/NULLIF(newtests,0) as casespertest, 
+cast(newDeaths as decimal)/(cast((select population from countries where country='Switzerland') as decimal)/1000000 ) as deathspermil
+from Switzerlandnew;
+
+SELECT * FROM japanavg;
+SELECT * FROM chileavg;
+SELECT * FROM switzerlandavg;
+
+\copy (SELECT * FROM japanavg) to 'japanavg.csv' csv header;
+\copy (SELECT * FROM chileavg) to 'chileavg.csv' csv header;
+\copy (SELECT * FROM switzerlandavg) to 'switzerlandavg.csv' csv header;
+

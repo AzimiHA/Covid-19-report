@@ -1,0 +1,214 @@
+-- ************************* a) ******************************************************************************************************
+csc343h-azimihas=> \i schema.sql
+psql:phase2ddl-nc.sql:2: NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to table projectschema.countries
+drop cascades to table projectschema.casesanddeaths
+drop cascades to table projectschema.testsandpositivity
+drop cascades to table projectschema.hospitilization
+drop cascades to table projectschema.vaccinations
+drop cascades to table projectschema.vaccinemanufacturer
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+csc343h-azimihas=> \copy countries from 'cleaned.csv' (format csv, DELIMITER ',', HEADER);
+COPY 223
+csc343h-azimihas=> \copy CasesAndDeaths from 'CasesAndDeaths.csv' csv header;
+COPY 124476
+csc343h-azimihas=> \copy TestsAndPositivity from 'TestsAndPositivity.csv' csv header;
+COPY 124476
+csc343h-azimihas=> \copy Hospitalization from 'hospitalization.csv' csv header;
+COPY 124476
+csc343h-azimihas=> \copy Vaccinations from 'Vaccinations.csv' csv header;
+COPY 124476
+csc343h-azimihas=> \copy VaccineManufacturer from 'vaccinations-by-manufacturer.csv' csv header;
+COPY 19352
+
+--************************** b) ******************************************************************************************************
+
+csc343h-azimihas=> \d countries
+                            Table "projectschema.countries"
+       Column       |       Type       | Collation | Nullable |         Default
+--------------------+------------------+-----------+----------+-------------------------
+ country            | text             |           | not null |
+ population         | integer          |           | not null |
+ population_density | double precision |           |          | 0.0
+ tests_units        | text             |           |          | 'Tests performed'::text
+Indexes:
+    "countries_pkey" PRIMARY KEY, btree (country)
+Referenced by:
+    TABLE "casesanddeaths" CONSTRAINT "casesanddeaths_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+    TABLE "hospitalization" CONSTRAINT "hospitalization_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+    TABLE "testsandpositivity" CONSTRAINT "testsandpositivity_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+    TABLE "vaccinations" CONSTRAINT "vaccinations_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+    TABLE "vaccinemanufacturer" CONSTRAINT "vaccinemanufacturer_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+
+csc343h-azimihas=> \d CasesAndDeaths
+          Table "projectschema.casesanddeaths"
+   Column    |  Type   | Collation | Nullable | Default
+-------------+---------+-----------+----------+---------
+ country     | text    |           | not null |
+ date        | date    |           | not null |
+ totalcases  | integer |           |          | 0
+ newcases    | integer |           |          | 0
+ totaldeaths | integer |           |          | 0
+ newdeaths   | integer |           |          | 0
+Indexes:
+    "casesanddeaths_pkey" PRIMARY KEY, btree (country, date)
+Foreign-key constraints:
+    "casesanddeaths_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+
+csc343h-azimihas=> \d testsandpositivity
+              Table "projectschema.testsandpositivity"
+     Column      |       Type       | Collation | Nullable | Default
+-----------------+------------------+-----------+----------+---------
+ country         | text             |           | not null |
+ date            | date             |           | not null |
+ stringencyindex | double precision |           |          | 0
+ totaltests      | integer          |           |          | 0
+ newtests        | integer          |           |          | 0
+ positiverate    | double precision |           |          | 0.0
+ testspercase    | double precision |           |          | 0.0
+Indexes:
+    "testsandpositivity_pkey" PRIMARY KEY, btree (country, date)
+Foreign-key constraints:
+    "testsandpositivity_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+
+csc343h-azimihas=> \d hospitalization
+            Table "projectschema.hospitalization"
+      Column      |  Type   | Collation | Nullable | Default
+------------------+---------+-----------+----------+---------
+ country          | text    |           | not null |
+ date             | date    |           | not null |
+ icupatients      | integer |           |          |
+ hospitalpatients | integer |           |          |
+Indexes:
+    "hospitalization_pkey" PRIMARY KEY, btree (country, date)
+Foreign-key constraints:
+    "hospitalization_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+
+csc343h-azimihas=> \d vaccinations
+                Table "projectschema.vaccinations"
+        Column         |  Type   | Collation | Nullable | Default
+-----------------------+---------+-----------+----------+---------
+ country               | text    |           | not null |
+ date                  | date    |           | not null |
+ totalvaccinations     | bigint  |           |          | 0
+ peoplevaccinated      | integer |           |          | 0
+ peoplefullyvaccinated | integer |           |          | 0
+ newvaccinations       | integer |           |          | 0
+Indexes:
+    "vaccinations_pkey" PRIMARY KEY, btree (country, date)
+Foreign-key constraints:
+    "vaccinations_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+
+csc343h-azimihas=> \d vaccinemanufacturer
+          Table "projectschema.vaccinemanufacturer"
+      Column       |  Type   | Collation | Nullable | Default
+-------------------+---------+-----------+----------+---------
+ country           | text    |           | not null |
+ date              | date    |           | not null |
+ manufacturer      | text    |           | not null |
+ totalvaccinations | integer |           | not null |
+Indexes:
+    "vaccinemanufacturer_pkey" PRIMARY KEY, btree (country, date, manufacturer)
+Foreign-key constraints:
+    "vaccinemanufacturer_country_fkey" FOREIGN KEY (country) REFERENCES countries(country)
+
+--******************************* c) *************************************************************************************************************
+
+
+csc343h-azimihas=> select count(*) from countries;
+ count
+-------
+   223
+(1 row)
+
+csc343h-azimihas=> select count(*) from casesanddeaths;
+ count
+--------
+ 124476
+(1 row)
+
+csc343h-azimihas=> select count(*) from testsandpositivity;
+ count
+--------
+ 124476
+(1 row)
+
+csc343h-azimihas=> select count(*) from hospitalization;
+ count
+--------
+ 124476
+(1 row)
+
+csc343h-azimihas=> select count(*) from vaccinations;
+ count
+--------
+ 124476
+(1 row)
+
+csc343h-azimihas=> select count(*) from vaccinemanufacturer;
+ count
+-------
+ 19352
+(1 row)
+
+--******************************************** d) *****************************************************************************************************
+
+csc343h-azimihas=> select * from countries where country='Afghanistan' or country='Canada' or country='Albania';
+   country   | population | population_density |   tests_units
+-------------+------------+--------------------+-----------------
+ Albania     |    2872934 |            104.871 | tests performed
+ Afghanistan |   39835428 |             54.422 | Tests performed
+ Canada      |   38067913 |              4.037 | Tests performed
+(3 rows)
+
+csc343h-azimihas=> select * from casesanddeaths where (country='Canada' and date='2020-11-18')
+or (country='Afghanistan' and date='2020-11-18') or (country='Albania' and date='2020-11-18');
+   country   |    date    | totalcases | newcases | totaldeaths | newdeaths
+-------------+------------+------------+----------+-------------+-----------
+ Afghanistan | 2020-11-18 |      43628 |      225 |        1638 |        12
+ Albania     | 2020-11-18 |      29837 |      711 |         646 |         9
+ Canada      | 2020-11-18 |     315586 |     4543 |       11324 |       104
+(3 rows)
+
+csc343h-azimihas=> select * from testsandpositivity where (country='Canada' and date='2020-11-18')
+or (country='Afghanistan' and date='2020-11-18') or (country='Albania' and date='2020-11-18');
+   country   |    date    | stringencyindex | totaltests | newtests | positiverate | testspercase
+-------------+------------+-----------------+------------+----------+--------------+--------------
+ Albania     | 2020-11-18 |           65.74 |     154326 |     2117 |        0.286 |          3.5
+ Canada      | 2020-11-18 |           70.83 |   12931224 |    73940 |        0.051 |         19.8
+ Afghanistan | 2020-11-18 |           12.04 |          0 |        0 |            0 |            0
+(3 rows)
+
+csc343h-azimihas=> select * from hospitalization where (country='Canada' and date='2020-11-18')
+or (country='Afghanistan' and date='2020-11-18') or (country='Albania' and date='2020-11-18');
+   country   |    date    | icupatients | hospitalpatients
+-------------+------------+-------------+------------------
+ Afghanistan | 2020-11-18 |             |
+ Albania     | 2020-11-18 |             |
+ Canada      | 2020-11-18 |         409 |             2009
+(3 rows)
+
+csc343h-azimihas=> select * from vaccinations where (country='Canada' and date='2021-06-01')
+or (country='Afghanistan' and date='2021-06-01') or (country='Albania' and date='2021-06-01');
+   country   |    date    | totalvaccinations | peoplevaccinated | peoplefullyvaccinated | newvaccinations
+-------------+------------+-------------------+------------------+-----------------------+-----------------
+ Albania     | 2021-06-01 |            780342 |           487078 |                293264 |            3881
+ Canada      | 2021-06-01 |          24332384 |         22124469 |               2207662 |          316064
+ Afghanistan | 2021-06-01 |                 0 |                0 |                     0 |               0
+(3 rows)
+
+csc343h-azimihas=> select * from vaccinemanufacturer where (country='United States' and date='2021-01-12');
+    country    |    date    |  manufacturer   | totalvaccinations
+---------------+------------+-----------------+-------------------
+ United States | 2021-01-12 | Moderna         |           3835859
+ United States | 2021-01-12 | Pfizer/BioNTech |           5488697
+(2 rows)
+
